@@ -45,7 +45,6 @@ Some wireshark notes (including writing lua dissectors) that I'm taking so I hav
 [Lua Post-Dissector Filter Cols](https://wiki.wireshark.org/Lua/Examples/filtcols)
 
 [Using Wireshark Lua Standalone](https://osqa-ask.wireshark.org/questions/30507/use-wiresharks-lua-interpreter-stand-alone/)
-[Wirebait](https://github.com/MarkoPaul0/WireBait)
 
 ### Sample Captures to Work With
 [Wireshark Sample Captures - Gitlab](https://gitlab.com/wireshark/wireshark/-/wikis/SampleCaptures)
@@ -55,13 +54,12 @@ Some wireshark notes (including writing lua dissectors) that I'm taking so I hav
 ### My Docs
 [Wireshark For Beginners Notes](wireshark_for_beginners.md)
 [Lua Dissector Info](lua_dissectors.md)
+[Handy utilities](handy_utilities.md)
 
 ### Other Docs
 **Important!**[Tshark Dev Guide](https://tshark.dev/)
 
-
 ## Dissectors
-
 ### Videos
 [Extending Wireshark with Lua](https://www.youtube.com/watch?v=wG0tN9BDh1A)
 [Lua Programming for Wireshark](https://www.youtube.com/playlist?list=PLedx6HwQji1O-SHD3_lCdSxMUT56d5y9Y)

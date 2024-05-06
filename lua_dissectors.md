@@ -1,5 +1,13 @@
 # Wireshark Lua Dissectors
 
+## A note from one of the core wireshark devs on "internal usage"
+```block
+if you mean automated testing (i.e., so it can be repeated for regression, etc.), then what we do in Wireshark itself to test them is run them via a shell script by using tshark with the "-X lua_script:<script>" option, in verbose mode output to a text file, and then verify the output file has what we expect it to have. (for example by using another Lua script that checks the output text file)
+
+If you clone the repo, or browse it online, you can see that in the test/suite-wslua.sh file, which is the Lua API test suite shell script. And the Lua scripts that are tested are in the test/lua directory.
+```
+from here: https://stackoverflow.com/questions/32120692/testing-wireshark-plugins
+
 ## Basic Dissector
 ```lua 
 -- dissector.lua
