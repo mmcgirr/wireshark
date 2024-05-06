@@ -37,6 +37,7 @@ Some wireshark notes (including writing lua dissectors) that I'm taking so I hav
 [Dev Guide - Lua API](https://www.wireshark.org/docs/wsdg_html/#wsluarm_modules)
 [Wireshark Gitlab Wiki Link](https://gitlab.com/wireshark/wireshark/-/wikis/home)
 
+[Wireshark Lua Files](https://github.com/wireshark/wireshark/tree/master/test/lua)
 [Lua Examples - Wiki](https://wiki.wireshark.org/Lua/Examples)
 [Lua Post-Dissector](https://wiki.wireshark.org/Lua/Examples/PostDissector)
 [Lua Contrib](https://gitlab.com/wireshark/editor-wiki/-/wikis/Contrib)
@@ -47,6 +48,7 @@ Some wireshark notes (including writing lua dissectors) that I'm taking so I hav
 [Using Wireshark Lua Standalone](https://osqa-ask.wireshark.org/questions/30507/use-wiresharks-lua-interpreter-stand-alone/)
 
 ### Sample Captures to Work With
+[Captures in WShark Source](https://github.com/wireshark/wireshark/tree/master/test/captures)
 [Wireshark Sample Captures - Gitlab](https://gitlab.com/wireshark/wireshark/-/wikis/SampleCaptures)
 [Wireshark Contrib Page - Gitlab](https://gitlab.com/wireshark/wireshark/-/wikis/Contrib)
 **Important!**[Chris Maynard - Dissector 101 - Lua and C "Foo" Protocol](https://www.wireshark.org/lists/wireshark-dev/202110/msg00008.html)
