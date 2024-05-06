@@ -1,14 +1,9 @@
--------------------------------------------------------------------------------
---
--- author: Hadriel Kaplan <hadriel@128technology.com>
--- Copyright (c) 2015, Hadriel Kaplan
--- This code is in the Public Domain, or the BSD (3 clause) license
--- if Public Domain does not apply in your country.
---
--- Version: 1.0
---
--------------------------------------------------------------------------------
---[[
+--[[ fpm.lua
+    author: Hadriel Kaplan <hadriel@128technology.com>
+    Copyright (c) 2015, Hadriel Kaplan
+    This code is in the Public Domain, or the BSD (3 clause) license
+    if Public Domain does not apply in your country.
+    Version: 1.0
 
     This code is a plugin for Wireshark, to dissect Quagga FPM Netlink
     protocol messages over TCP.
@@ -19,8 +14,6 @@
 
     Because of the second goal (a tutorial), this script has a lot more comments
     than one would normally expect or want.
-
-----------------------------------------
 
     OVERVIEW:
 
@@ -53,9 +46,6 @@
     this Lua script creates a fake SLL header, and invokes the built-in
     Netlink dissector using that.
 
-
-----------------------------------------
-
     HOW TO RUN THIS SCRIPT:
     
     Wireshark and Tshark support multiple ways of loading Lua scripts: through
@@ -75,8 +65,6 @@
     since the FPM packets in it use TCP port 2620, and since the FPM protocol
     in this script has been set to automatically decode TCP port 2620, it will
     automagically do it without doing "Decode As ...".
-
-----------------------------------------
 
     Writing Lua Dissectors for TCP-based Protocols:
 
@@ -134,12 +122,10 @@
         3) If you don't need more bytes, return either nothing, or return the
            length of the Tvb. Either way is fine.
 
-    See the code in this script for an example of the above.
-
-]]----------------------------------------
+    See the code in this script for an example of the above. --]]
 
 
-----------------------------------------
+
 -- do not modify this table
 local debug_level = {
     DISABLED = 0,
@@ -147,16 +133,17 @@ local debug_level = {
     LEVEL_2  = 2
 }
 
-----------------------------------------
--- set this DEBUG to debug_level.LEVEL_1 to enable printing debug_level info
--- set it to debug_level.LEVEL_2 to enable really verbose printing
--- set it to debug_level.DISABLED to disable debug printing
--- note: this will be overridden by user's preference settings
+--[[
+    set this DEBUG to debug_level.LEVEL_1 to enable printing debug_level info
+    set it to debug_level.LEVEL_2 to enable really verbose printing
+    set it to debug_level.DISABLED to disable debug printing
+    note: this will be overridden by user's preference settings --]]
 local DEBUG = debug_level.LEVEL_1
 
--- a table of our default settings - these can be changed by changing
--- the preferences through the GUI or command-line; the Lua-side of that
--- preference handling is at the end of this script file
+--[[
+    a table of our default settings - these can be changed by changing
+    the preferences through the GUI or command-line; the Lua-side of that
+    preference handling is at the end of this script file --]]
 local default_settings =
 {
     debug_level  = DEBUG,

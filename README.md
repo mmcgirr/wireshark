@@ -40,6 +40,7 @@ Some wireshark notes (including writing lua dissectors) that I'm taking so I hav
 [Wireshark Wiki - LUA](https://wiki.wireshark.org/Lua/)
 [Wireshark WSLUA Readme](https://gitlab.com/wireshark/wireshark/-/blob/master/doc/README.wslua)
 [Wireshark Gitlab Wiki Link](https://gitlab.com/wireshark/wireshark/-/wikis/home)
+[Wireshark How to Dissect Anything](https://wiki.wireshark.org/HowToDissectAnything)
 
 [Wireshark Lua Files](https://github.com/wireshark/wireshark/tree/master/test/lua)
 [Lua Examples - Wiki](https://wiki.wireshark.org/Lua/Examples)
@@ -69,7 +70,10 @@ Some wireshark notes (including writing lua dissectors) that I'm taking so I hav
 [Handy utilities](handy_utilities.md)
 
 ### Other Docs
-**Important!**[Tshark Dev Guide](https://tshark.dev/)
+**Important!**
+[Tshark Dev Guide](https://tshark.dev/)
+[Aerospike Lua Dissector](https://github.com/aerospike-community/aerospike-wireshark-plugin/tree/master)
+[Aerospike Dissector Presentation](http://shakthimaan.com/downloads/Shooting-the-trouble-down-to-the-Wireshark-Lua-plugin.pdf)
 
 ## Dissectors
 ### Videos
