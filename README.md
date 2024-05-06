@@ -10,6 +10,7 @@ Some wireshark notes (including writing lua dissectors) that I'm taking so I hav
     - [Official Videos](#official-videos)
     - [Lua-Specific resources](#lua-specific-resources)
     - [Sample Captures to Work With](#sample-captures-to-work-with)
+    - [Packet Generators / Tools](#packet-generators--tools)
     - [My Docs](#my-docs)
     - [Other Docs](#other-docs)
   - [Dissectors](#dissectors)
@@ -25,7 +26,8 @@ Some wireshark notes (including writing lua dissectors) that I'm taking so I hav
 ## Wireshark Docs:
 ### Official Docs
 [User Guide - One Page](https://www.wireshark.org/docs/wsug_html/)  
-[Dev Guide - One Page](https://www.wireshark.org/docs/wsdg_html/)  
+[Dev Guide - One Page](https://www.wireshark.org/docs/wsdg_html/)
+[Wireshark Wiki](https://wiki.wireshark.org/)
 
 [Hansang Bae Traces Files](https://app.box.com/v/HSBBook)
 
@@ -35,6 +37,8 @@ Some wireshark notes (including writing lua dissectors) that I'm taking so I hav
 ### Lua-Specific resources
 [Dev Guide - Lua Intro](https://www.wireshark.org/docs/wsdg_html/#wsluarm)  
 [Dev Guide - Lua API](https://www.wireshark.org/docs/wsdg_html/#wsluarm_modules)
+[Wireshark Wiki - LUA](https://wiki.wireshark.org/Lua/)
+[Wireshark WSLUA Readme](https://gitlab.com/wireshark/wireshark/-/blob/master/doc/README.wslua)
 [Wireshark Gitlab Wiki Link](https://gitlab.com/wireshark/wireshark/-/wikis/home)
 
 [Wireshark Lua Files](https://github.com/wireshark/wireshark/tree/master/test/lua)
@@ -44,14 +48,20 @@ Some wireshark notes (including writing lua dissectors) that I'm taking so I hav
 [Peter Wu Postdissector Example](https://gist.github.com/Lekensteyn/288ea8c2f8efdf87819f8489a75b5475)
 [Peter Wu Gists](https://gist.github.com/Lekensteyn)
 [Lua Post-Dissector Filter Cols](https://wiki.wireshark.org/Lua/Examples/filtcols)
+[Port-Independent (Heuristic) Dissectors](https://mika-s.github.io/wireshark/lua/dissector/2018/12/30/creating-port-independent-wireshark-dissectors-in-lua.html)
 
 [Using Wireshark Lua Standalone](https://osqa-ask.wireshark.org/questions/30507/use-wiresharks-lua-interpreter-stand-alone/)
+[String Handling In Dissectors](https://wiki.wireshark.org/Development/String-handling-in-dissectors)
 
 ### Sample Captures to Work With
 [Captures in WShark Source](https://github.com/wireshark/wireshark/tree/master/test/captures)
 [Wireshark Sample Captures - Gitlab](https://gitlab.com/wireshark/wireshark/-/wikis/SampleCaptures)
 [Wireshark Contrib Page - Gitlab](https://gitlab.com/wireshark/wireshark/-/wikis/Contrib)
 **Important!**[Chris Maynard - Dissector 101 - Lua and C "Foo" Protocol](https://www.wireshark.org/lists/wireshark-dev/202110/msg00008.html)
+
+
+### Packet Generators / Tools
+[Scapy Packet Generation](https://0xbharath.github.io/art-of-packet-crafting-with-scapy/scapy/inspecting_packets/index.html)
 
 ### My Docs
 [Wireshark For Beginners Notes](wireshark_for_beginners.md)

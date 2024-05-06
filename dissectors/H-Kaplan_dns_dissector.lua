@@ -1,79 +1,76 @@
-----------------------------------------
--- script-name: dns_dissector.lua
---
--- author: Hadriel Kaplan <hadrielk at yahoo dot com>
--- Copyright (c) 2014, Hadriel Kaplan
--- This code is in the Public Domain, or the BSD (3 clause) license if Public Domain does not apply
--- in your country.
---
--- Version: 2.1
---
--- Changes since 2.0:
---   * fixed a bug with default settings
---   * added ability for command-line to overide defaults
---
--- Changes since 1.0:
---   * made it use the new ProtoExpert class model for expert info
---   * add a protocol column with the proto name
---   * added heuristic dissector support
---   * added preferences settings
---   * removed byteArray2String(), and uses the new ByteArray:raw() method instead
---
--- BACKGROUND:
--- This is an example Lua script for a protocol dissector. The purpose of this script is two-fold:
---   * To provide a reference tutorial for others writing Wireshark dissectors in Lua
---   * To test various functions being called in various ways, so this script can be used in the test-suites
--- I've tried to meet both of those goals, but it wasn't easy. No doubt some folks will wonder why some
--- functions are called some way, or differently than previous invocations of the same function. I'm trying to
--- to show both that it can be done numerous ways, but also I'm trying to test those numerous ways, and my more
--- immediate need is for test coverage rather than tutorial guide. (the Lua API is sorely lacking in test scripts)
---
--- OVERVIEW:
--- This script creates an elementary dissector for DNS. It's neither comprehensive nor error-free with regards
--- to the DNS protocol. That's OK. The goal isn't to fully dissect DNS properly - Wireshark already has a good
--- DNS dissector built-in. We don't need another one. We also have other example Lua scripts, but I don't think
--- they do a good job of explaining things, and the nice thing about this one is getting capture files to
--- run it against is trivial. (plus I uploaded one)
---
--- HOW TO RUN THIS SCRIPT:
--- Wireshark and Tshark support multiple ways of loading Lua scripts: through a dofile() call in init.lua,
--- through the file being in either the global or personal plugins directories, or via the command line.
--- See the Wireshark User's Guide chapter on Lua (https://www.wireshark.org/docs/wsdg_html_chunked/wsluarm_modules.html).
--- Once the script is loaded, it creates a new protocol named "MyDNS" (or "MYDNS" in some places).  If you have
--- a capture file with DNS packets in it, simply select one in the Packet List pane, right-click on it, and
--- select "Decode As ...", and then in the dialog box that shows up scroll down the list of protocols to one
--- called "MYDNS", select that and click the "ok" or "apply" button.  Voila`, you're now decoding DNS packets
--- using the simplistic dissector in this script.  Another way is to download the capture file made for
--- this script, and open that - since the DNS packets in it use UDP port 65333 (instead of the default 53),
--- and since the MyDNS protocol in this script has been set to automatically decode UDP port 65333, it will
--- automagically do it without doing "Decode As ...".
---
-----------------------------------------
--- do not modify this table
+--[[  script-name: dns_dissector.lua
+    
+  author: Hadriel Kaplan <hadrielk at yahoo dot com>
+  Copyright (c) 2014, Hadriel Kaplan
+  
+  This code is in the Public Domain, or the BSD (3 clause) license if Public Domain does not apply
+  in your country.
+  Version: 2.1
+  Changes since 2.0:
+    * fixed a bug with default settings
+    * added ability for command-line to overide defaults
+  Changes since 1.0:
+    * made it use the new ProtoExpert class model for expert info
+    * add a protocol column with the proto name
+    * added heuristic dissector support
+    * added preferences settings
+    * removed byteArray2String(), and uses the new ByteArray:raw() method instead
+  BACKGROUND:
+
+  This is an example Lua script for a protocol dissector. The purpose of this script is two-fold:
+    * To provide a reference tutorial for others writing Wireshark dissectors in Lua
+    * To test various functions being called in various ways, so this script can be used in the test-suites
+  I've tried to meet both of those goals, but it wasn't easy. No doubt some folks will wonder why some
+  functions are called some way, or differently than previous invocations of the same function. I'm trying to
+  to show both that it can be done numerous ways, but also I'm trying to test those numerous ways, and my more
+  immediate need is for test coverage rather than tutorial guide. (the Lua API is sorely lacking in test scripts)
+  OVERVIEW:
+  This script creates an elementary dissector for DNS. It's neither comprehensive nor error-free with regards
+  to the DNS protocol. That's OK. The goal isn't to fully dissect DNS properly - Wireshark already has a good
+  DNS dissector built-in. We don't need another one. We also have other example Lua scripts, but I don't think
+  they do a good job of explaining things, and the nice thing about this one is getting capture files to
+  run it against is trivial. (plus I uploaded one)
+  HOW TO RUN THIS SCRIPT:
+  Wireshark and Tshark support multiple ways of loading Lua scripts: through a dofile() call in init.lua,
+  through the file being in either the global or personal plugins directories, or via the command line.
+  See the Wireshark User's Guide chapter on Lua (https://www.wireshark.org/docs/wsdg_html_chunked/wsluarm_modules.html).
+  Once the script is loaded, it creates a new protocol named "MyDNS" (or "MYDNS" in some places).  If you have
+  a capture file with DNS packets in it, simply select one in the Packet List pane, right-click on it, and
+  select "Decode As ...", and then in the dialog box that shows up scroll down the list of protocols to one
+  called "MYDNS", select that and click the "ok" or "apply" button.  Voila`, you're now decoding DNS packets
+  using the simplistic dissector in this script.  Another way is to download the capture file made for
+  this script, and open that - since the DNS packets in it use UDP port 65333 (instead of the default 53),
+  and since the MyDNS protocol in this script has been set to automatically decode UDP port 65333, it will
+  automagically do it without doing "Decode As".  --]]
+
+
+
+    -- do not modify this table
 local debug_level = {
     DISABLED = 0,
     LEVEL_1  = 1,
     LEVEL_2  = 2
 }
 
--- set this DEBUG to debug_level.LEVEL_1 to enable printing debug_level info
--- set it to debug_level.LEVEL_2 to enable really verbose printing
--- note: this will be overridden by user's preference settings
+--[[ 
+ set this DEBUG to debug_level.LEVEL_1 to enable printing debug_level info
+ set it to debug_level.LEVEL_2 to enable really verbose printing
+ note: this will be overridden by user's preference settings --]]
 local DEBUG = debug_level.LEVEL_1
 
-local default_settings =
-{
+local default_settings = {
     debug_level  = DEBUG,
     port         = 65333,
     heur_enabled = true,
     heur_regmode = 1,
 }
 
--- for testing purposes, we want to be able to pass in changes to the defaults
--- from the command line; because you can't set lua preferences from the command
--- line using the '-o' switch (the preferences don't exist until this script is
--- loaded, so the command line thinks they're invalid preferences being set)
--- so we pass them in as command arguments insetad, and handle it here:
+--[[ 
+    for testing purposes, we want to be able to pass in changes to the defaults
+    from the command line; because you can't set lua preferences from the command
+    line using the '-o' switch (the preferences don't exist until this script is
+    loaded, so the command line thinks they're invalid preferences being set)
+    so we pass them in as command arguments insetad, and handle it here: --]]
 local args={...} -- get passed-in args
 if args and #args > 0 then
     for _, arg in ipairs(args) do
@@ -121,30 +118,30 @@ reset_debug_level()
 dprint2("Wireshark version = ", get_version())
 dprint2("Lua version = ", _VERSION)
 
-----------------------------------------
--- Unfortunately, the older Wireshark/Tshark versions have bugs, and part of the point
--- of this script is to test those bugs are now fixed.  So we need to check the version
--- end error out if it's too old.
+--[[
+  Unfortunately, the older Wireshark/Tshark versions have bugs, and part of the point
+  of this script is to test those bugs are now fixed.  So we need to check the version
+  end error out if it's too old. --]]
+
 local major, minor, micro = get_version():match("(%d+)%.(%d+)%.(%d+)")
 if major and tonumber(major) <= 1 and ((tonumber(minor) <= 10) or (tonumber(minor) == 11 and tonumber(micro) < 3)) then
         error(  "Sorry, but your Wireshark/Tshark version ("..get_version()..") is too old for this script!\n"..
                 "This script needs Wireshark/Tshark version 1.11.3 or higher.\n" )
 end
 
--- more sanity checking
--- verify we have the ProtoExpert class in wireshark, as that's the newest thing this file uses
+--[[ 
+  more sanity checking
+  verify we have the ProtoExpert class in wireshark, as that's the newest thing this file uses --]]
 assert(ProtoExpert.new, "Wireshark does not have the ProtoExpert class, so it's too old - get the latest 1.11.3 or higher")
 
-----------------------------------------
 
+--[[ creates a Proto object, but doesn't register it yet --]]
 
-----------------------------------------
--- creates a Proto object, but doesn't register it yet
 local dns = Proto("mydns","MyDNS Protocol")
 
-----------------------------------------
--- multiple ways to do the same thing: create a protocol field (but not register it yet)
--- the abbreviation should always have "<myproto>." before the specific abbreviation, to avoid collisions
+--[[
+  multiple ways to do the same thing: create a protocol field (but not register it yet)
+  the abbreviation should always have "<myproto>." before the specific abbreviation, to avoid collisions --]]
 local pf_trasaction_id      = ProtoField.new   ("Transaction ID", "mydns.trans_id", ftypes.UINT16)
 local pf_flags              = ProtoField.new   ("Flags", "mydns.flags", ftypes.UINT16, nil, base.HEX)
 local pf_num_questions      = ProtoField.uint16("mydns.num_questions", "Number of Questions")
@@ -152,10 +149,12 @@ local pf_num_answers        = ProtoField.uint16("mydns.num_answers", "Number of 
 local pf_num_authority_rr   = ProtoField.uint16("mydns.num_authority_rr", "Number of Authority RRs")
 local pf_num_additional_rr  = ProtoField.uint16("mydns.num_additional_rr", "Number of Additional RRs")
 
--- within the flags field, we want to parse/show the bits separately
--- note the "base" argument becomes the size of the bitmask'ed field when ftypes.BOOLEAN is used
--- the "mask" argument is which bits we want to use for this field (e.g., base=16 and mask=0x8000 means we want the top bit of a 16-bit field)
--- again the following shows different ways of doing the same thing basically
+--[[
+  within the flags field, we want to parse/show the bits separately
+  note the "base" argument becomes the size of the bitmask'ed field when ftypes.BOOLEAN is used
+  the "mask" argument is which bits we want to use for this field (e.g., base=16 and mask=0x8000 means we want the top bit of a 16-bit field)
+  again the following shows different ways of doing the same thing basically
+--]]
 local pf_flag_response              = ProtoField.new   ("Response", "mydns.flags.response", ftypes.BOOLEAN, {"this is a response","this is a query"}, 16, 0x8000, "is the message a response?")
 local pf_flag_opcode                = ProtoField.new   ("Opcode", "mydns.flags.opcode", ftypes.UINT16, nil, base.DEC, 0x7800, "operation code")
 local pf_flag_authoritative         = ProtoField.new   ("Authoritative", "mydns.flags.authoritative", ftypes.BOOLEAN, nil, 16, 0x0400, "is the response authoritative?")
@@ -193,10 +192,10 @@ local classes = {
 }
 local pf_query_class        = ProtoField.uint16("mydns.query.class", "Class", base.DEC, classes, nil, "keep it classy folks")
 
-----------------------------------------
--- this actually registers the ProtoFields above, into our new Protocol
--- in a real script I wouldn't do it this way; I'd build a table of fields programmatically
--- and then set dns.fields to it, so as to avoid forgetting a field
+--[[
+  this actually registers the ProtoFields above, into our new Protocol
+  in a real script I wouldn't do it this way; I'd build a table of fields programmatically
+  and then set dns.fields to it, so as to avoid forgetting a field --]]
 dns.fields = { pf_trasaction_id, pf_flags,
     pf_num_questions, pf_num_answers, pf_num_authority_rr, pf_num_additional_rr,
     pf_flag_response, pf_flag_opcode, pf_flag_authoritative,
@@ -204,13 +203,13 @@ dns.fields = { pf_trasaction_id, pf_flags,
     pf_flag_z, pf_flag_authenticated, pf_flag_checking_disabled, pf_flag_rcode,
     pf_query, pf_query_name, pf_query_name_len, pf_query_label_count, pf_query_type, pf_query_class }
 
-----------------------------------------
--- create some expert info fields (this is new functionality in 1.11.3)
--- Expert info fields are very similar to proto fields: they're tied to our protocol,
--- they're created in a similar way, and registered by setting a 'experts' field to
--- a table of them just as proto fields were put into the 'dns.fields' above
--- The old way of creating expert info was to just add it to the tree, but that
--- didn't let the expert info be filterable in wireshark, whereas this way does
+--[[
+  create some expert info fields (this is new functionality in 1.11.3)
+  Expert info fields are very similar to proto fields: they're tied to our protocol,
+  they're created in a similar way, and registered by setting a 'experts' field to
+  a table of them just as proto fields were put into the 'dns.fields' above
+  The old way of creating expert info was to just add it to the tree, but that
+  didn't let the expert info be filterable in wireshark, whereas this way does --]]
 local ef_query     = ProtoExpert.new("mydns.query.expert", "DNS query message",
                                      expert.group.REQUEST_CODE, expert.severity.CHAT)
 local ef_response  = ProtoExpert.new("mydns.response.expert", "DNS response message",
@@ -226,34 +225,35 @@ local ef_bad_query = ProtoExpert.new("mydns.query.missing.expert", "DNS query mi
 -- register them
 dns.experts = { ef_query, ef_too_short, ef_bad_query, ef_response, ef_ultimate }
 
-----------------------------------------
--- we don't just want to display our protocol's fields, we want to access the value of some of them too!
--- There are several ways to do that.  One is to just parse the buffer contents in Lua code to find
--- the values.  But since ProtoFields actually do the parsing for us, and can be retrieved using Field
--- objects, it's kinda cool to do it that way. So let's create some Fields to extract the values.
--- The following creates the Field objects, but they're not 'registered' until after this script is loaded.
--- Also, these lines can't be before the 'dns.fields = ...' line above, because the Field.new() here is
--- referencing fields we're creating, and they're not "created" until that line above.
--- Furthermore, you cannot put these 'Field.new()' lines inside the dissector function.
--- Before Wireshark version 1.11, you couldn't even do this concept (of using fields you just created).
+--[[
+  we don't just want to display our protocol's fields, we want to access the value of some of them too!
+  There are several ways to do that.  One is to just parse the buffer contents in Lua code to find
+  the values.  But since ProtoFields actually do the parsing for us, and can be retrieved using Field
+  objects, it's kinda cool to do it that way. So let's create some Fields to extract the values.
+  The following creates the Field objects, but they're not 'registered' until after this script is loaded.
+  Also, these lines can't be before the 'dns.fields = ...' line above, because the Field.new() here is
+  referencing fields we're creating, and they're not "created" until that line above.
+  Furthermore, you cannot put these 'Field.new()' lines inside the dissector function.
+  Before Wireshark version 1.11, you couldn't even do this concept (of using fields you just created). --]]
 local questions_field       = Field.new("mydns.num_questions")
 local query_type_field      = Field.new("mydns.query.type")
 local query_class_field     = Field.new("mydns.query.class")
 local response_field        = Field.new("mydns.flags.response")
 
--- here's a little helper function to access the response_field value later.
--- Like any Field retrieval, you can't retrieve a field's value until its value has been
--- set, which won't happen until we actually use our ProtoFields in TreeItem:add() calls.
--- So this isResponse() function can't be used until after the pf_flag_response ProtoField
--- has been used inside the dissector.
--- Note that calling the Field object returns a FieldInfo object, and calling that
--- returns the value of the field - in this case a boolean true/false, since we set the
--- "mydns.flags.response" ProtoField to ftype.BOOLEAN way earlier when we created the
--- pf_flag_response ProtoField.  Clear as mud?
---
--- A shorter version of this function would be:
--- local function isResponse() return response_field()() end
--- but I though the below is easier to understand.
+--[[
+  here's a little helper function to access the response_field value later.
+  Like any Field retrieval, you can't retrieve a field's value until its value has been
+  set, which won't happen until we actually use our ProtoFields in TreeItem:add() calls.
+  So this isResponse() function can't be used until after the pf_flag_response ProtoField
+  has been used inside the dissector.
+  Note that calling the Field object returns a FieldInfo object, and calling that
+  returns the value of the field - in this case a boolean true/false, since we set the
+  "mydns.flags.response" ProtoField to ftype.BOOLEAN way earlier when we created the
+  pf_flag_response ProtoField.  Clear as mud?
+  A shorter version of this function would be:
+  local function isResponse() return response_field()() end
+  but I though the below is easier to understand. --]]
+
 local function isResponse()
     local response_fieldinfo = response_field()
     return response_fieldinfo()
@@ -263,9 +263,10 @@ end
 -- preferences handling stuff
 --------------------------------------------------------------------------------
 
--- a "enum" table for our enum pref, as required by Pref.enum()
--- having the "index" number makes ZERO sense, and is completely illogical
--- but it's what the code has expected it to be for a long time. Ugh.
+--[[
+   a "enum" table for our enum pref, as required by Pref.enum()
+   having the "index" number makes ZERO sense, and is completely illogical
+   but it's what the code has expected it to be for a long time. Ugh. --]]
 local debug_pref_enum = {
     { 1,  "Disabled", debug_level.DISABLED },
     { 2,  "Level 1",  debug_level.LEVEL_1  },
@@ -281,7 +282,6 @@ dns.prefs.port  = Pref.uint("Port number", default_settings.port,
 dns.prefs.heur  = Pref.bool("Heuristic enabled", default_settings.heur_enabled,
                             "Whether heuristic dissection is enabled or not")
 
-----------------------------------------
 -- a function for handling prefs being changed
 function dns.prefs_changed()
     dprint2("prefs_changed called")
@@ -311,7 +311,6 @@ end
 dprint2("MyDNS Prefs registered")
 
 
-----------------------------------------
 ---- some constants for later use ----
 -- the DNS header size
 local DNS_HDR_LEN = 12
@@ -327,59 +326,66 @@ local MIN_QUERY_LEN = 5
 local getQueryName
 
 
-----------------------------------------
--- The following creates the callback function for the dissector.
--- It's the same as doing "dns.dissector = function (tvbuf,pkt,root)"
--- The 'tvbuf' is a Tvb object, 'pktinfo' is a Pinfo object, and 'root' is a TreeItem object.
--- Whenever Wireshark dissects a packet that our Proto is hooked into, it will call
--- this function and pass it these arguments for the packet it's dissecting.
+--[[ dissector callback
+  The following creates the callback function for the dissector.
+  It's the same as doing "dns.dissector = function (tvbuf,pkt,root)"
+  The 'tvbuf' is a Tvb object, 'pktinfo' is a Pinfo object, and 'root' is a TreeItem object.
+  Whenever Wireshark dissects a packet that our Proto is hooked into, it will call
+  this function and pass it these arguments for the packet it's dissecting. --]]
 function dns.dissector(tvbuf,pktinfo,root)
     dprint2("dns.dissector called")
 
     -- set the protocol column to show our protocol name
     pktinfo.cols.protocol:set("MYDNS")
 
-    -- We want to check that the packet size is rational during dissection, so let's get the length of the
-    -- packet buffer (Tvb).
-    -- Because DNS has no additional payload data other than itself, and it rides on UDP without padding,
-    -- we can use tvb:len() or tvb:reported_len() here; but I prefer tvb:reported_length_remaining() as it's safer.
+    --[[ 
+      We want to check that the packet size is rational during dissection, so let's get the length of the
+      packet buffer (Tvb).
+      Because DNS has no additional payload data other than itself, and it rides on UDP without padding,
+      we can use tvb:len() or tvb:reported_len() here; but I prefer tvb:reported_length_remaining() as it's safer. --]]
+
     local pktlen = tvbuf:reported_length_remaining()
 
-    -- We start by adding our protocol to the dissection display tree.
-    -- A call to tree:add() returns the child created, so we can add more "under" it using that return value.
-    -- The second argument is how much of the buffer/packet this added tree item covers/represents - in this
-    -- case (DNS protocol) that's the remainder of the packet.
+    --[[
+      We start by adding our protocol to the dissection display tree.
+      A call to tree:add() returns the child created, so we can add more "under" it using that return value.
+      The second argument is how much of the buffer/packet this added tree item covers/represents - in this
+      case (DNS protocol) that's the remainder of the packet. --]]
     local tree = root:add(dns, tvbuf:range(0,pktlen))
 
     -- now let's check it's not too short
     if pktlen < DNS_HDR_LEN then
-        -- since we're going to add this protocol to a specific UDP port, we're going to
-        -- assume packets in this port are our protocol, so the packet being too short is an error
-        -- the old way: tree:add_expert_info(PI_MALFORMED, PI_ERROR, "packet too short")
-        -- the correct way now:
+        --[[
+          since we're going to add this protocol to a specific UDP port, we're going to
+          assume packets in this port are our protocol, so the packet being too short is an error
+          the old way: tree:add_expert_info(PI_MALFORMED, PI_ERROR, "packet too short")
+          the correct way now: --]]
         tree:add_proto_expert_info(ef_too_short)
         dprint("packet length",pktlen,"too short")
         return
     end
 
-    -- Now let's add our transaction id under our dns protocol tree we just created.
-    -- The transaction id starts at offset 0, for 2 bytes length.
+    --[[
+      Now let's add our transaction id under our dns protocol tree we just created.
+      The transaction id starts at offset 0, for 2 bytes length. --]]
     tree:add(pf_trasaction_id, tvbuf:range(0,2))
 
-    -- We'd like to put the transaction id number in the GUI row for this packet, in its
-    -- INFO column/cell.  First we need the transaction id value, though.  Since we just
-    -- dissected it with the previous code line, we could now get it using a Field's
-    -- FieldInfo extractor, but instead we'll get it directly from the TvbRange just
-    -- to show how to do that.  We'll use Field/FieldInfo extractors later on...
+    --[[ We'd like to put the transaction id number in the GUI row for this packet, in its
+      INFO column/cell.  First we need the transaction id value, though.  Since we just
+      dissected it with the previous code line, we could now get it using a Field's
+      FieldInfo extractor, but instead we'll get it directly from the TvbRange just
+      to show how to do that.  We'll use Field/FieldInfo extractors later on... --]]
     local transid = tvbuf:range(0,2):uint()
     pktinfo.cols.info:set("(".. transid ..")")
 
-    -- now let's add the flags, which are all in the packet bytes at offset 2 of length 2
-    -- instead of calling this again and again, let's just use a variable
+    --[[
+      now let's add the flags, which are all in the packet bytes at offset 2 of length 2
+      instead of calling this again and again, let's just use a variable --]]
     local flagrange = tvbuf:range(2,2)
 
     -- for our flags field, we want a sub-tree
     local flag_tree = tree:add(pf_flags, flagrange)
+        
         -- I'm indenting this for clarity, because it's adding to the flag's child-tree
 
         -- let's add the type of message (query vs. response)
@@ -395,10 +401,11 @@ function dns.dissector(tvbuf,pktinfo,root)
             query_flag_tree:add_proto_expert_info(ef_query)
         end
 
-        -- we now know if it's a response or query, so let's put that in the
-        -- GUI packet row, in the INFO column cell
-        -- this line of code uses a Lua trick for doing something similar to
-        -- the C/C++ 'test ? true : false' shorthand
+        --[[
+          we now know if it's a response or query, so let's put that in the
+          GUI packet row, in the INFO column cell
+          this line of code uses a Lua trick for doing something similar to
+          the C/C++ 'test ? true : false' shorthand --]]
         pktinfo.cols.info:prepend(isResponse() and "Response " or "Query ")
 
         flag_tree:add(pf_flag_opcode, flagrange)
@@ -449,17 +456,19 @@ function dns.dissector(tvbuf,pktinfo,root)
                 return
             end
 
-            -- we don't know how long this query field in total is, so we have to parse it first before
-            -- adding it to the tree, because we want to identify the correct bytes it covers
+            --[[
+              we don't know how long this query field in total is, so we have to parse it first before
+              adding it to the tree, because we want to identify the correct bytes it covers--]]
             local label_count, name, name_len = getQueryName(tvbuf:range(pos,pktlen_remaining))
             if not label_count then
                 queries_tree:add_expert_info(PI_MALFORMED, PI_ERROR, name)
                 return
             end
 
-            -- now add the first query to the 'Queries' child tree we just created
-            -- we're going to change the string generated by this later, after we figure out the subsequent fields.
-            -- the whole query field is the query name field length we just got, plus 2-byte type and 2-byte class.
+            --[[
+                now add the first query to the 'Queries' child tree we just created
+                we're going to change the string generated by this later, after we figure out the subsequent fields.
+                the whole query field is the query name field length we just got, plus 2-byte type and 2-byte class. --]]
             local q_tree = queries_tree:add(pf_query, tvbuf:range(pos, name_len + 4))
 
             q_tree:add(pf_query_name, tvbuf:range(pos, name_len), name)
@@ -475,9 +484,10 @@ function dns.dissector(tvbuf,pktinfo,root)
             q_tree:add(pf_query_class, tvbuf:range(pos + 2, 2))
             pos = pos + 4
 
-            -- now change the query text
-            -- calling a Field returns a multival of one FieldInfo object for
-            -- each value, so we select() only the most recent one
+            --[[
+                now change the query text
+                calling a Field returns a multival of one FieldInfo object for
+                each value, so we select() only the most recent one --]]
             q_tree:set_text(name..": type "..select(-1, query_type_field()).display
                                 ..", class "..select(-1, query_class_field()).display)
 
@@ -500,26 +510,28 @@ function dns.dissector(tvbuf,pktinfo,root)
     return pos
 end
 
-----------------------------------------
--- we want to have our protocol dissection invoked for a specific UDP port,
--- so get the udp dissector table and add our protocol to it
+
+--[[
+    we want to have our protocol dissection invoked for a specific UDP port,
+    so get the udp dissector table and add our protocol to it --]]
 DissectorTable.get("udp.port"):add(default_settings.port, dns)
 
-----------------------------------------
--- we also want to add the heuristic dissector, for any UDP protocol
--- first we need a heuristic dissection function
--- this is that function - when wireshark invokes this, it will pass in the same
--- things it passes in to the "dissector" function, but we only want to actually
--- dissect it if it's for us, and we need to return true if it's for us, or else false
--- figuring out if it's for us or not is not easy
--- we need to try as hard as possible, or else we'll think it's for us when it's
--- not and block other heuristic dissectors from getting their chance
---
--- in practice, you'd never set a dissector like this to be heuristic, because there
--- just isn't enough information to safely detect if it's DNS or not
--- but I'm doing it to show how it would be done
---
--- Note: this heuristic stuff is new in 1.11.3
+
+--[[
+    we also want to add the heuristic dissector, for any UDP protocol
+    first we need a heuristic dissection function
+    this is that function - when wireshark invokes this, it will pass in the same
+    things it passes in to the "dissector" function, but we only want to actually
+    dissect it if it's for us, and we need to return true if it's for us, or else false
+    figuring out if it's for us or not is not easy
+    we need to try as hard as possible, or else we'll think it's for us when it's
+    not and block other heuristic dissectors from getting their chance
+
+    in practice, you'd never set a dissector like this to be heuristic, because there
+    just isn't enough information to safely detect if it's DNS or not
+    but I'm doing it to show how it would be done
+
+    Note: this heuristic stuff is new in 1.11.3 --]]
 local function heur_dissect_dns(tvbuf,pktinfo,root)
     dprint2("heur_dissect_dns called")
 
@@ -535,19 +547,21 @@ local function heur_dissect_dns(tvbuf,pktinfo,root)
 
     local tvbr = tvbuf:range(0,DNS_HDR_LEN)
 
-    -- the first 2 bytes are transaction id, which can be anything so no point in checking those
-    -- the next 2 bytes contain flags, a couple of which have some values we can check against
+    --[[
+        the first 2 bytes are transaction id, which can be anything so no point in checking those
+        the next 2 bytes contain flags, a couple of which have some values we can check against
 
-    -- the opcode has to be 0, 1, 2, 4 or 5
-    -- the opcode field starts at bit offset 17 (in C-indexing), for 4 bits in length
+        the opcode has to be 0, 1, 2, 4 or 5
+        the opcode field starts at bit offset 17 (in C-indexing), for 4 bits in length --]]
     local check = tvbr:bitfield(17,4)
     if check == 3 or check > 5 then
         dprint("heur_dissect_dns: invalid opcode:",check)
         return false
     end
 
-    -- the rcode has to be 0-10, 16-22 (we're ignoring private use rcodes here)
-    -- the rcode field starts at bit offset 28 (in C-indexing), for 4 bits in length
+    --[[
+        the rcode has to be 0-10, 16-22 (we're ignoring private use rcodes here)
+        the rcode field starts at bit offset 28 (in C-indexing), for 4 bits in length --]]
     check = tvbr:bitfield(28,4)
     if check > 22 or (check > 10 and check < 16) then
         dprint("heur_dissect_dns: invalid rcode:",check)
@@ -572,19 +586,21 @@ local function heur_dissect_dns(tvbuf,pktinfo,root)
     -- verify this script
     root:add("Heuristic dissector used"):set_generated()
 
-    -- ok, looks like it's ours, so go dissect it
-    -- note: calling the dissector directly like this is new in 1.11.3
-    -- also note that calling a Dissector object, as this does, means we don't
-    -- get back the return value of the dissector function we created previously
-    -- so it might be better to just call the function directly instead of doing
-    -- this, but this script is used for testing and this tests the call() function
+    --[[
+        ok, looks like it's ours, so go dissect it
+        note: calling the dissector directly like this is new in 1.11.3
+        also note that calling a Dissector object, as this does, means we don't
+        get back the return value of the dissector function we created previously
+        so it might be better to just call the function directly instead of doing
+        this, but this script is used for testing and this tests the call() function --]]
     dns.dissector(tvbuf,pktinfo,root)
 
-    -- since this is over a transport protocol, such as UDP, we can set the
-    -- conversation to make it sticky for our dissector, so that all future
-    -- packets to/from the same address:port pair will just call our dissector
-    -- function directly instead of this heuristic function
-    -- this is a new attribute of pinfo in 1.11.3
+    --[[
+        since this is over a transport protocol, such as UDP, we can set the
+        conversation to make it sticky for our dissector, so that all future
+        packets to/from the same address:port pair will just call our dissector
+        function directly instead of this heuristic function
+        this is a new attribute of pinfo in 1.11.3 --]]
     pktinfo.conversation = dns
 
     return true
@@ -602,20 +618,20 @@ elseif default_settings.heur_regmode == 3 then
     dns:register_heuristic("udp", function (...) return dns.dissector(...); end )
 end
 
--- We're done!
--- our protocol (Proto) gets automatically registered after this script finishes loading
-----------------------------------------
+--[[
+    We're done!
+    our protocol (Proto) gets automatically registered after this script finishes loading --]]
 
-----------------------------------------
--- DNS query names are not just null-terminated strings; they're actually a sequence of
--- 'labels', with a length octet before each one.  So "foobar.com" is actually the
--- string "\06foobar\03com\00".  We could create a ProtoField for label_length and label_name
--- or whatever, but since this is an example script I'll show how to do it in raw code.
--- This function is given the TvbRange object from the dissector() function, and needs to
--- parse it.
--- On success, it returns three things: the number of labels, the name string, and how
--- many bytes it covered of the buffer.
--- On failure, it returns nil and the error message.
+--[[
+    DNS query names are not just null-terminated strings; they're actually a sequence of
+    'labels', with a length octet before each one.  So "foobar.com" is actually the
+    string "\06foobar\03com\00".  We could create a ProtoField for label_length and label_name
+    or whatever, but since this is an example script I'll show how to do it in raw code.
+    This function is given the TvbRange object from the dissector() function, and needs to
+    parse it.
+    On success, it returns three things: the number of labels, the name string, and how
+    many bytes it covered of the buffer.
+    On failure, it returns nil and the error message. --]]
 getQueryName = function (tvbr)
     local label_count = 0
     local name = ""
