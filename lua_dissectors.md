@@ -9,7 +9,10 @@ If you clone the repo, or browse it online, you can see that in the test/suite-w
 from here: https://stackoverflow.com/questions/32120692/testing-wireshark-plugins
 
 ## Basic Dissector
-```lua 
+<details> 
+  <summary>dissector.lua code listing</summary>
+
+```lua
 -- dissector.lua
 
 -- Create a protocol
@@ -45,7 +48,17 @@ tcp_port:add(10000, parent)
 local udp_port = DissectorTable.get("udp.port")
 udp_port:add(4325, parent)
 ```
+</details>
 
+### Sample capture that illustrates the dissector in action.
+<details>
+<summary>Sample pcapng for dissector.lua</summary>
+
+</details>
+
+### Notes on the basic dissector
+<details>
+<summary>Line by line summary</summary>
 buffer => The "data" portion of a given frame  
 pinfo  => the packet information pane of wireshark  
 tree   => the packet details pane of wireshark
@@ -63,6 +76,7 @@ buffer = {
     end
 }
 ```
+</details>
 
 ------
 
