@@ -24,18 +24,36 @@ function string:split(sSeparator, nMax, bRegexp)
    return aRecord
 end
 
-data = "2P0000000010      05002          ***************************ECRWSH**C-022OXKK01 1 1 002 GOR2 FZAQB KETTERING-PECKOR CURRENT RESIDENT42 BLACKHAWK CLUB CTDANVILLE CA 94506-451304714800HUMAN READABLE DO NOT PRINT - 1027110025006979455994506451342FFDFFTFTATADDTTDTAAAAFDAFTADDTDAAATAFFAAFTAFDFDTTADFFATTDAADAADFT94622P0000000020      05009          ***************************ECRWSH**C-022BRENDA KETTERING-PECKOR CURRENT RESIDENT42 BLACKHAWK CLUB CTDANVILLE CA 94506-4513KEYCODE:442B124NOXKK0112009MEE1FZAQHUMAN READABLE DO NOT PRINT - 1027110921050735696494506451342DDAADAADADFFATFDAATDTFFFTAFDADAAFDFAATFTDFTTAAAFFAAADFADFTFADAATD98062P0000000030      05013          ***********************ECRWSH**C-022BRENDA K PECKOR CURRENT RESIDENT42 BLACKHAWK CLUB CTDANVILLE CA 94506-4513OXKK0113013POL1FZAQHUMAN READABLE DO NOT PRINT - 1027110025014174103694506451342DTFDDDTFFDTAFFFAFFFDDTFFDFFDAFDTDDFTTDDDTFTATAFFFDFTADTAATDFFDTAF9808"
+function read_file(f)
+  --local size = 2^8 --512b buffer
+  
+  local my_f = assert(io.open(f, "rb"))
 
---for k,v in next, string.split(data, '\x1e') do print(k,v) end
+  -- read the whole file
+  local t = my_f:read("*all")
+  
+  --my_f:seek('set') --reset seek to file start
+  my_f:close()
+  return t
+end
+
+
+file="./lua_tests/test_data/fasttech/VIPNT_TEST.txt"
+data = read_file(file)
+
 the_tbl = string.split(data, '\x1e')
 
-print(#the_tbl)
-for k,v in pairs(the_tbl) do 
-  print("\nRecord Data: \n" .. v)
+for k,v in pairs(the_tbl) do
+  if v == '' then 
+    --print("first record shenanigans")
+  else
+    print("\nRecord Data: \n" .. v)
+      
+      fields = string.split(v, '\x1d')
+      print("Field data:")
+      for k,v in ipairs(fields) do
+        print("Field Len: ".. #v .. "\tF# " .. k .. " : " .. v)
+      end
+  end
     
-    fields = string.split(v, '\x1d')
-    print("Field data:")
-    for k,v in ipairs(fields) do
-      print("Field Len: ".. #v .. "\tF# " .. k .. " : " .. v)
-    end
 end

@@ -41,6 +41,8 @@ function parse_data(d, rec_sep, fld_sep)
       
       -- split the fields off into the fields table
       local fld_count = 0
+      -- Handle field one (RS.......GS)
+      if records[rec_count].data:gmatch("[\x1e](.)+[\x1d]") 
       for field in records[rec_count].data:gmatch( "[^" .. fld_sep .. "]+" ) do
         fld_count = fld_count + 1
         records[rec_count].fields[fld_count] = field
