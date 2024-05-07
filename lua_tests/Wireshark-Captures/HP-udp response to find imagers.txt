@@ -1,0 +1,33 @@
+4e 45 54 42 52 - Key/Action: NETB R
+
+00 00 00 94 		- Recordsize (stored size of struct)
+c0 a8 01 52 		- Device IP Address (192 168 1 82)
+ff ff ff 00 		- IP netmask (255 255 255 0)
+00 00 00 00 		- Gateway address (0 0 0 0)
+00 00 00 00 		- TFTP gateway (0 0 0 0)
+00 01 c2 00 		- initial system baud rate? (0001c200 => 115,200)
+00 					- wait_seconds (wait 0 until booting)
+01 					- bBoot_to_application
+00 					- bException_Action
+0005c2f658004453f614587bf7fe3c6231405b1e - m_FileName[80] TFTp filename to load
+74e4bee60fdabbec19906884a0bf36d3b493c22f - m_FileName[80] TFTp filename to load
+cefef0e792eec332226d4d77f2e984a08348390c - m_FileName[80] TFTp filename to load
+bd5ce77311f5eff0309d5ec3a49709148c9d23d0 - m_FileName[80] TFTp filename to load
+00 0b ee 20 3f 55 	- MAC_Address
+00 					- ser_port
+00 00 00 00 		- ip_dns[4]
+00 0b ee 20 3f 55  	- core_mac_address[6]
+00 - typeof_if
+aa - direct_tx
+c0 a8 01 52 - m_dwIP_used[4]
+ff ff ff 00 - m_dwMask_used
+00 00 00 00 - m_dwGate_used
+00 00 00 00 - m_dwDNS_used
+00 00 00    - m_bUnused[3]
+00 			- m_q_boot
+0d 78 		- checksum
+43 46 56 32 2d 36 36 00 - device_name (I think) "CFV2-66\0
+55 6e 6b 6e 6f 77 6e 00 - device_app (I think) "Unknown\0"
+
+
+0005c2f658004453f614587bf7fe3c6231405b1e74e4bee60fdabbec19906884a0bf36d3b493c22fcefef0e792eec332226d4d77f2e984a08348390cbd5ce77311f5eff0309d5ec3a49709148c9d23d0
