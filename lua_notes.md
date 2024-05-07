@@ -77,3 +77,22 @@ foo = load([[
 foo('hello', 'world')
 ```
 </details>
+
+<details>
+<summary>String Splitting</summary>
+
+See [here](https://stackoverflow.com/questions/1426954/split-string-in-lua) for various examples of string splitting
+
+See [here](http://lua-users.org/wiki/SplitJoin) for the lua-users discussion on string splitting - various simple and advanced splitting functions.
+</details>
+
+<details>
+<summary>Multi-Byte Splitting</summary>
+
+See [here](https://stackoverflow.com/questions/9003747/splitting-a-multibyte-string-in-lua) for a decent example(s) of UTF-8 splitting
+</details>
+
+<details>
+<summary>Byte array splitting</summary>
+
+</details>
