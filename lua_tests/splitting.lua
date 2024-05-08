@@ -1,6 +1,6 @@
 --ff = '\f'
-ff = '\x0c'
-etx = '\x03'
+local ff = '\x0c'
+local etx = '\x03'
 
 -- test string - no "separator" at end of string
 local s = "JobName=对人类家庭 生命.qjx"..ff.."a123 nonsense=string"..ff.."of=shit"..etx
@@ -9,7 +9,7 @@ print(s)
 -- insert "separator" before etx, and remove etx
 local new_s = s:sub(1,#s-1) .. ff
 
-function mysplit (inputstr, sep)
+local function mysplit (inputstr, sep)
   if sep == nil then
     sep = ff
   end
@@ -25,11 +25,11 @@ end
 
 
 
-lines = mysplit(new_s, ff)
+local lines = mysplit(new_s, ff)
 for _,line in pairs(lines) do
   
   print('Line: ' .. line)
-  k_v = mysplit(line, '=')
+  local k_v = mysplit(line, '=')
   for k,v in pairs(k_v)do
     print(k,v)
   end

@@ -45,7 +45,7 @@
 
 
 
-    -- do not modify this table
+-- do not modify this table
 local debug_level = {
     DISABLED = 0,
     LEVEL_1  = 1,

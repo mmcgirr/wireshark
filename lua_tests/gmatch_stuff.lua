@@ -6,10 +6,10 @@
 
 
 ---[[
-data = "2P0000000010      05002          ***************************ECRWSH**C-022OXKK01 1 1 002 GOR2 FZAQB KETTERING-PECKOR CURRENT RESIDENT42 BLACKHAWK CLUB CTDANVILLE CA 94506-451304714800HUMAN READABLE DO NOT PRINT - 1027110025006979455994506451342FFDFFTFTATADDTTDTAAAAFDAFTADDTDAAATAFFAAFTAFDFDTTADFFATTDAADAADFT94622P0000000020      05009          ***************************ECRWSH**C-022BRENDA KETTERING-PECKOR CURRENT RESIDENT42 BLACKHAWK CLUB CTDANVILLE CA 94506-4513KEYCODE:442B124NOXKK0112009MEE1FZAQHUMAN READABLE DO NOT PRINT - 1027110921050735696494506451342DDAADAADADFFATFDAATDTFFFTAFDADAAFDFAATFTDFTTAAAFFAAADFADFTFADAATD98062P0000000030      05013          ***********************ECRWSH**C-022BRENDA K PECKOR CURRENT RESIDENT42 BLACKHAWK CLUB CTDANVILLE CA 94506-4513OXKK0113013POL1FZAQHUMAN READABLE DO NOT PRINT - 1027110025014174103694506451342DTFDDDTFFDTAFFFAFFFDDTFFDFFDAFDTDDFTTDDDTFTATAFFFDFTADTAATDFFDTAF9808"
+local data = "2P0000000010      05002          ***************************ECRWSH**C-022OXKK01 1 1 002 GOR2 FZAQB KETTERING-PECKOR CURRENT RESIDENT42 BLACKHAWK CLUB CTDANVILLE CA 94506-451304714800HUMAN READABLE DO NOT PRINT - 1027110025006979455994506451342FFDFFTFTATADDTTDTAAAAFDAFTADDTDAAATAFFAAFTAFDFDTTADFFATTDAADAADFT94622P0000000020      05009          ***************************ECRWSH**C-022BRENDA KETTERING-PECKOR CURRENT RESIDENT42 BLACKHAWK CLUB CTDANVILLE CA 94506-4513KEYCODE:442B124NOXKK0112009MEE1FZAQHUMAN READABLE DO NOT PRINT - 1027110921050735696494506451342DDAADAADADFFATFDAATDTFFFTAFDADAAFDFAATFTDFTTAAAFFAAADFADFTFADAATD98062P0000000030      05013          ***********************ECRWSH**C-022BRENDA K PECKOR CURRENT RESIDENT42 BLACKHAWK CLUB CTDANVILLE CA 94506-4513OXKK0113013POL1FZAQHUMAN READABLE DO NOT PRINT - 1027110025014174103694506451342DTFDDDTFFDTAFFFAFFFDDTFFDFFDAFDTDDFTTDDDTFTATAFFFDFTADTAATDFFDTAF9808"
 --]]
 
-function read_file(f)
+local function read_file(f)
   --local size = 2^8 --512b buffer
   
   local my_f = assert(io.open(f, "rb"))
@@ -22,7 +22,7 @@ function read_file(f)
   return t
 end
 
-function parse_data(d, rec_sep, fld_sep)
+local function parse_data(d, rec_sep, fld_sep)
   local records = {}
   local rec_count = 0
   
@@ -42,11 +42,11 @@ function parse_data(d, rec_sep, fld_sep)
       -- split the fields off into the fields table
       local fld_count = 0
       -- Handle field one (RS.......GS)
-      if records[rec_count].data:gmatch("[\x1e](.)+[\x1d]") 
-      for field in records[rec_count].data:gmatch( "[^" .. fld_sep .. "]+" ) do
-        fld_count = fld_count + 1
-        records[rec_count].fields[fld_count] = field
-        
+      if records[rec_count].data:gmatch("[\x1e](.)+[\x1d]") then
+        for field in records[rec_count].data:gmatch( "[^" .. fld_sep .. "]+" ) do
+          fld_count = fld_count + 1
+          records[rec_count].fields[fld_count] = field
+        end
       end    
     end      
   end
@@ -57,12 +57,12 @@ function parse_data(d, rec_sep, fld_sep)
 end
 
 --require("nonsense")
-file="./lua_tests/test_data/fasttech/VIPNT_TEST.txt"
+local file="./lua_tests/test_data/fasttech/VIPNT_TEST.txt"
 
 --data = read_file(file)
-rsep='\x1e' -- RS
-fsep='\x1d' -- GS
-records = parse_data(data, rsep, fsep)
+local rsep='\x1e' -- RS
+local fsep='\x1d' -- GS
+local records = parse_data(data, rsep, fsep)
 
 if #records >= 1 then
   for i=1,#records,1 do

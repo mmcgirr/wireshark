@@ -1,6 +1,6 @@
 local cc = require("config")
 
-function read_file(file)
+local function read_file(file)
   local size = 2^8 --512b buffer
   
   local myfile = assert(io.open(file, "rb"))
@@ -14,7 +14,7 @@ function read_file(file)
   return t
 end
 
-data = read_file("./test_data/fasttech/VIPNT_TEST.txt")
+local data = read_file("./test_data/fasttech/VIPNT_TEST.txt")
 --print(data)
 
 --[[
@@ -49,7 +49,7 @@ end
 local function more_advanced(sep)
   print("More complex example - first and last index of sub within string")
   -- one method, prints where substring starts and ends
-  local first, last = 0
+  local first, last = 0, 0
   while true do
     first, last = data:find(cc.r_sep[sep], first+1)
     if not first then break end

@@ -24,7 +24,7 @@ function string:split(sSeparator, nMax, bRegexp)
    return aRecord
 end
 
-function read_file(f)
+local function read_file(f)
   --local size = 2^8 --512b buffer
   
   local my_f = assert(io.open(f, "rb"))
@@ -38,10 +38,10 @@ function read_file(f)
 end
 
 
-file="./lua_tests/test_data/fasttech/VIPNT_TEST.txt"
-data = read_file(file)
+local file="./lua_tests/test_data/fasttech/VIPNT_TEST.txt"
+local data = read_file(file)
 
-the_tbl = string.split(data, '\x1e')
+local the_tbl = string.split(data, '\x1e')
 
 for k,v in pairs(the_tbl) do
   if v == '' then 
@@ -49,7 +49,7 @@ for k,v in pairs(the_tbl) do
   else
     print("\nRecord Data: \n" .. v)
       
-      fields = string.split(v, '\x1d')
+      local fields = string.split(v, '\x1d')
       print("Field data:")
       for k,v in ipairs(fields) do
         print("Field Len: ".. #v .. "\tF# " .. k .. " : " .. v)
