@@ -1,0 +1,55 @@
+rem test.bat - test writing a simple schema file
+@echo off
+echo This file will generate a basic schema file.
+echo Run it in the directory where the data file is
+echo NOTE: this only is a temp workaround for vega file loading issues.
+
+set /P datafile=Enter datafile name (case sensitive!):
+set /P recordSep=Enter ascii (decimal) code of record separator:
+set /P fieldSep=Enter ascii (decimal) code of field separator:
+rem call :dequote %datafile%
+set strip_df=%datafile:"=%
+echo %strip_df%
+
+set schema=%datafile%.schema
+set filepath=%~dp0%strip_df%
+echo "%filepath%"
+
+echo Writing Small Schema File...
+(
+	echo ^<?xml version="1.0" encoding="UTF-8"?^>
+	echo ^<SCHEMA_FILE^>
+	echo     ^<DATABASE_INFO name="%filepath%" sourceFilename="%filepath%" type="ASCII"/^>
+	echo     ^<ASCII_TEXT_SCHEMA^>
+	echo         ^<TRACK_RECORD_STATUS^>false^</TRACK_RECORD_STATUS^>
+    echo         ^<REPRINT_DATABASE_NUMBER^>1^</REPRINT_DATABASE_NUMBER^>
+    echo         ^<REVERSE_ORDER_PRINT^>false^</REVERSE_ORDER_PRINT^>
+    echo         ^<QUANTITY_FIELD_INDEX^>-1^</QUANTITY_FIELD_INDEX^>
+    echo         ^<TEXT_ENCODING^>UTF-8^</TEXT_ENCODING^>
+    echo         ^<RECORD_DELIMITER^>Custom^</RECORD_DELIMITER^>
+    echo         ^<CUSTOM_RECORD_DELIMITER custom0="%recordSep%"/^>
+    echo         ^<FIELD_DELIMITER^>Custom^</FIELD_DELIMITER^>
+    echo         ^<CUSTOM_FIELD_DELIMITER custom0="%fieldSep%"/^>
+    echo         ^<FIRST_RECORD_FIELD_NAME^>false^</FIRST_RECORD_FIELD_NAME^>
+	echo         ^<DATA_FIELDS^>
+	echo         ^</DATA_FIELDS^>
+	echo     ^</ASCII_TEXT_SCHEMA^>
+	echo ^</SCHEMA_FILE^>
+) > %schema%
+
+
+rem set name=
+rem set sourceFilename=
+
+rem echo "%~nx0"
+rem echo datafile is %datafile%
+
+rem this is the path where this script is being run
+rem echo %~dp0
+
+rem this is the full path including the script name
+rem echo %~f0
+
+rem this will prompt the user for input
+rem set /P datafile=Enter datafile name (case sensitive!):
+
