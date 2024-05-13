@@ -1,0 +1,3 @@
+# collectgarbage()
+ 
+collectgarbage([opt [, arg]])
