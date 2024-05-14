@@ -992,7 +992,367 @@ A chunk is also a block, and so local variables can be declared in a chunk outsi
 </details>
 
 ## Expressions
-XXXXX - this is where I ended for the night.
+
+### Basic Expressions
+<details>
+<summary>Basic Expressions</summary>
+
+```bnf
+exp ::= prefixexp
+exp ::= nil | false | true
+exp ::= Number
+exp ::= String
+exp ::= functiondef
+exp ::= tableconstructor
+exp ::= '...'
+exp ::= exp binop exp
+exp ::= unop exp
+prefixexp ::= var | functioncall | '(' exp ')'
+```
+
+Binary operators: arithmetic operators, relational operators, logical operators and concatenation operator.
+
+Both function calls and vararg (...) expressions can result in multiple values.  If a function call is used as a statement, the its return list is adjusted to zero elements, discarding all returned values.  If an expression is used as the last (or only) element of a list of expressions, then no adjustment is made (unless the expression is enclosed in parens.  In all other context, lua adjusts the result list to one element - either discarding all others, or a nil if there aren't any.
+
+**Example:**
+```lua
+f()            -- adjusted to 0 results
+g(f(), x)      -- f() is adjusted to 1 result
+g(x, f())      -- g gets x plus all results from f()
+a,b,c = f(), x --f() is adjusted to 1 result (c gets nil)
+a,b = ...      --a gets first vararg, b gets second (a and b can both get nil)
+a,b,c = x, f() --f() is adjusted to 2 results
+a,b,c = f()    --f() is adjusted to 3 results
+return f()     --returns all results from f()
+return x,y,f() --returns x,y and all results from f()
+{f()}          --creates a list with results from f()
+{...}          --creates a list with all vararg parameters
+{f(), nil}     --f() is adjusted to 1 result
+```
+
+Any expression in parens always results in only one value.  So: (f(x,y,z)) is always a single value, even if f returns several values.  The value is 1st result of f() or nil if f doesn't return anything.
+
+</details>
+
+### Arithmetic operators
+<details>
+<summary>Arithmetic Ops</summary>
+
+Lua supports usual arithmetic operators:  
++, -, *, /, %, ^, and unary - (negation)  
+
+If the operands are numbers or strings that can be converted to numbers, then all operators have the usual meaning.  Exponentiation works for any exponent.  E.g. x^(-0.5) is inverse of square root of x.  
+
+Modulo is defined as:  
+a % b == a - math.floor(a/b)*b  --remainder of division that rounds quotient to -inf.
+
+</details>
+
+### Coercion
+<details>
+<summary>Coercion</summary>
+
+Lua automatically converts between string and number values at run time.  Any arithmetic operation applied to a string tries to convert this string to a number.  Whenever a number is used where a string is expected, the number is converted to a string in a reasonable format.
+
+</details>
+
+### Relational Operators
+<details>
+<summary>Relational Operators</summary>
+
+The relational operators are:  
+==   ~=   <   >   <=   >=  
+They always return either false or true.  
+
+Equality first compares the type of operands.  
+* if types are different, result is **false**
+* Otherwise, values of operands are compared  
+* Numbers and strings are compared in the usual way.  
+* Tables, userdata and threads are compared by **reference** they are only considered equal if they are *the same object* (memory address is the same)  
+* Closures with the same reference are always equal.  
+* Closures with any detectable difference are always different.  
+
+You can change how lua compares tables and userdata by using the __eq metamethod  
+
+Conversion rules **do not apply** to equality comparisons.  
+* "0" == 0 --is **false**.
+* t[0] and t["0"] denote different entries in the same table
+* ~= is exactly the negation of ==
+</details>
+
+### Logical Operators
+<details>
+<summary>Logical Operators</summary>
+
+They are: **and** **or** and **not**  
+* All logical operators consider false and nil as false, and everything else as true  
+
+* negation **not** always returns either false or true  
+* **and** returns its first argument if this value is **false or nil**, otherwise, it returns the second argument  
+* **or** returns its first argument if this value is different from **nil and false**.  Otherwise, it returns the 2nd argument.
+* both and and or use short-cut evaluation.  the second operand is only evaluated if necessary.
+</details>
+
+### Concatenation
+<details>
+<summary>Concat</summary>
+
+String concatenation is denoted by 2 dots **..**  If both operands are strings or numbers, then they are converted to strings.  Otherwise, the metamethod __concat is called.  
+</details>
+
+### The Length Operator
+<details>
+<summary>Length Operator</summary>
+
+* The length operator denoted by unary prefix **#**.  Length of a string is its number of bytes.  
+* You can use the __len metamethod to modify the length operator behavior for *any value but strings*.  
+* Unless __len is given, the length of a table t is only defined if a table is a sequence.  The set of positive numeric keys is equal to {1..n} for some non-negative n.  
+  * A table like {10, 20, nil, 40} is *not a sequence*
+  * Non-numeric keys do not interfere with whether a table is a sequence.  E.g.: {10, 20, ['foo']='bar', 40} is len 3.  
+
+</details>
+
+### Precedence
+<details>
+<summary>Precedence</summary>
+
+Operator precedence follows the table below from lower to higher priority:
+```lua
+or  
+and  
+<  >  <=  >=  ~=  ==  
+..  
++ -
+* / %
+not # -
+^  
+```  
+
+* Concatenation and exponentiation are right associative.  All others are left associative.  
+* You can use parens to change the order of operations.  
+</details>
+
+### Table Constructors
+<details>
+<summary>Table Constructors</summary>
+
+* Table constructors are expressions that create tables.  Every time a constructor is evaluated, a new table is created.  
+  * You can either create an empty table, or an initialized one with values (or keys/values)  
+**eBNF**
+```bnf
+tableconstructor ::= '{' [fieldlist] '}'
+fieldlist        ::= field {fieldsep field} [fieldsep]
+field            ::= '[' exp ']' '=' exp | Name '=' exp | exp
+fieldsep         ::= ',' | ';'
+```
+
+* each field of the form [exp1] = exp2 adds to the new table an entry with the key exp1 and value exp2.
+* a field in the form name = exp is equivalent to ["name"] = exp.
+* Fields of the form exp are equivalent to [i] = exp where i are consecutive numerical integers, starting with 1.  Fields in other formats do not affect this counting.  
+**Example**
+```lua
+a = { [f(1)]=g; "x", "y"; x=1, f(x), [30] = 23; 45 }
+
+--- is equivalent to:
+do 
+  local t = {}
+  t[f(1)] = g
+  t[1] = "x"
+  t[2] = "y"
+  t.x = 1
+  t[3] = f(x)
+  t[30] = 23
+  t[4] = 45
+  a = t
+end 
+```
+
+* If the last field in the list has the form *exp* and the expression is a function call or vararg expression, then all values returned by this expression enter the list consecutively.  
+* The field list can have an optional trailing field separator.
+</details>
+
+### Function Calls
+<details>
+<summary>Function calls</summary>
+
+Function calls have the following syntax:  
+**eBNF**
+```bnf
+functioncall ::= prefixexp args
+```
+
+* First, prefixexp and args are evaluated.
+  * If value of prefixexp has type *function*, then this function is called with given args
+  * Otherwise, prefixexp __call metamethod is called - having as first parameter the value of prefixexp, followed by original call arguments.  
+
+The form: 
+**eBNF**
+```bnf
+functioncall ::= prefixexp ':' Name args
+```
+
+Can be used to call methods.  A call v:name(args) is the **exact same** as v.name(v, args), except that *v* is only evaluated once.  
+
+Arguments have the following syntax: 
+**eBNF**
+```bnf
+args ::= '(' [explist] ')'
+args ::= tableconstructor
+args ::= String
+```
+
+All argument expressions are evaluated before the call.  
+* A call of form f{fields} is sugar for f({fields}).
+* a call of form f'string' or f"string" or f[[string]] is the same as f('string').
+
+A call of the form *return functioncall* is called a **tail call**.  
+
+Lua implements proper tail calls (or *tail recursion*).  In a tail call: 
+* the called function reuses the stack entry of the calling function.
+* There is no limit on the number of nested tail calls that a program can execute.
+* Tail calls erase any debug information about the calling function.
+* Tail calls **only happen** when return has *one single function call* as argument.  None of the following are tail calls:  
+
+**Example**
+```lua
+return (f(x))   -- results adjusted to 1
+return 2 * f(x) -- 
+return x, f(x)  -- additional results
+f(x); return    -- results discarded
+return x or f(x) -- results adjusted to 1
+```
+
+</details>
+
+### Function Definitions
+<details>
+<summary>Function Defs</summary>
+
+Syntax:  
+**eBNF**
+```bnf
+functiondef ::= function funcbody
+funcbody ::= '(' [parlist] ')' block end
+```
+
+Syntactic sugar forms:
+**eBNF**
+```bnf
+stat ::= function funcname funcbody 
+stat ::= local function Name funcbody
+funcname ::= Name {'.' Name} [':' Name] 
+```
+
+* Function statements and translations
+```lua
+function f() body end         -- translation f = function() body end
+function t.a.b.c.f() body end -- translation t.a.b.c.f = function() body end
+local function f() body end   -- translation local f; f = function() body end
+```
+
+* Function definitions are executable expressions, whose *value* has type function.  
+  * When lua precompiles a chunk, all the function bodies are compiled too.
+  * When Lua executes the function definition,the function is *instantiated* (or closed).
+  * This function closure is the final value of the expression.
+
+* Parameters act as local variables initialized with the argument values:
+**eBNF**
+```bnf
+parlist ::= namelist [',' '...'] | '...'
+```
+
+* When a function is called, the list of arguments is adjusted to the length of the list of parameters, unless the function is a *vararg function*, which is indicated by three dots (...) at the end of the parameter list.  
+  * Vararg functions do not adjust their argument list.  It collects all the arguments and supplies them to the function through a *vararg expression*, which is also 3 dots (...)
+  * The value of the expression is a list of all actual extra arguments, similar to a function with multiple results.
+  * If a vararg expression is used inside another expression or in the middle of a list of expressions, the its return list is **adjusted to one element**.
+  * If the expression is used as the last element of a list of expressions, then no adjustment is made (unless the last expression is enclosed in parens)
+
+**Example**
+```lua
+function f(a, b) end
+function g(a, b, ...) end
+function r() return 1,2,3 end
+
+--- Call Mapping
+--- CALL          PARAMETERS
+f(3)              a=3, b=nil
+f(3, 4)           a=3, b=4
+f(3, 4, 5)        a=3, b=4
+f(r(), 10)        a=1, b=10
+f(r())            a=1, b=2
+
+g(3)              a=3, b=nil, ... -> (nothing)
+g(3, 4)           a=3, b=4, ... -> (nothing)
+g(3, 4, 5, 8)     a=3, b=4, ... -> 5 8
+g(5, r())         a=5, b=1, ... -> 2 3
+```
+
+* Results are returned using **return** statement.  If control reaches end of function without encountering a return, then function returns with no results.
+* There is a system dependent limit on number of return values.  The limit is guaranteed to be larger than 1000.
+* The colon synta is used for defining *methods*.  Functions that have an implicit extra parameter "self".  Thus:
+
+```lua
+function t.a.b.c:f (params) body end
+
+-- is the same as
+t.a.b.c.f = function(self, params) body end
+```
+
+</details>
+
+### Visibility Rules
+<details>
+<summary>Visibility Rules</summary>
+
+* Lua is lexically scoped.
+  * The scope of the innermost variable begins at the first statement after its declaration and lasts until the last non-void statement of the innermost block that includes the declaration.
+**Example**
+```lua
+x = 10                --global x
+do                    -- new scope
+  local x = x         -- new x, equivalent to global x (10) NOTE: new x **not yet in scope**, so value refers to outer (global, in this case) x
+  print(x)            -- --> 10
+  x = x+1             -- x == 11
+  do                  -- new scope
+    local x = x+1     -- references previous scope x (11)
+    print(x)          -- --> 12
+  end
+  print(x)            -- outer inner scope x (11)
+end
+print(x)              -- back to global x
+```
+
+* Because of lexical scoping rules, local variables can be freely accessed by functions defined inside their scope.
+* *A local variable used by an inner function* is called an **upvalue**  (or an external local variable), inside the inner function.
+* Notice that each execution of a **local** statement defines new local variables. 
+**Example**
+```lua
+a = {}
+local x = 20
+for i=1,10 do 
+  local y = 0
+  a[i] = function() y=y+1; return x+y end
+end
+```
+
+* The loop creates 10 closures (10 instances of the anonymous function).  Each closure uses a different y variable, while all of the closures use the same x
+</details>
+
+## The Application Programming Interface
+
+This will describe the C API for Lua.  
+* C API is the set of C functions available to the host program to communicate with Lua.
+* **All API functions and related types and constants are declared in header file: lua.h**
+* Any facility in the API may be provided as a macro instead.
+* Lua API functions do not check their arguments for validity or consistency.  You can use LUA_USE_APICHECK as compilation flag to change this.
+
+### The Stack
+<details>
+<summary>The Stack</summary>
+
+
+</details>
+XXXXX This is where i finished for the night.
 
 ## Lua Standard Libraries
 ### Basic Library:
